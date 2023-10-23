@@ -175,12 +175,12 @@ function shoot() {
     // Si seguimos jugando
     if (isStarted == true) {
         // Si no estamos disparando ya en este momento
-        //if (isShooting === false) {
+        if (isShooting === false) {
             // Añade la fisica de la bala y su sonido
             manageBullet(scene.physics.add.sprite(shooter.x, shooter.y, "bullet"))
             isShooting = true;
             shootSound.play()
-        //}
+        }
     }
 }
 
@@ -364,9 +364,9 @@ function manageEnemyBullet(bullet, enemy) {
     // Le pasamos el angulo de disparo, calculado desde el marcianito al jugador
     var angle = Phaser.Math.Angle.BetweenPoints(enemy, shooter);
     // Subimos la velocidad de la bala si hemos conseguido 30 puntos
-    if (score > 30){
+    if (score > 25){
         enemyBulletVelo = 350;
-    } else if (score > 50){
+    } else if (score > 45){
         enemyBulletVelo = 450;
     }
     // Creamos la bala rotada
