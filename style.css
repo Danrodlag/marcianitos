@@ -1,12 +1,5 @@
 body{
-    display: flex;
-    flex-direction: column;
-    flex-wrap: wrap-reverse;
     background-color: black;
-    align-items: center;
-}
-canvas{
-    max-width: fit-content;
 }
 p{
     color: #00B51B;

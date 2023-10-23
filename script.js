@@ -1,10 +1,17 @@
 // Configuracion principal en formato json
 var config = {
     
+    // El tipo se elige automático
     type: Phaser.AUTO,
     // Tamaño
     width: 800,
     height: 600,
+    // Posición del canvas
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_HORIZONTALLY,
+
+    // Se ve más Arcade y más definido
+    pixelArt: true,
     // Tipo de físicas
     physics: {
         default: 'arcade',
@@ -31,7 +38,7 @@ enemyInfo = {
     // Cantidad de enemigos y su colocación
     count: {
         row: 5,
-        col: 9
+        col: 10
     },
     // Distancia con paredes y entre si
     offset: {
@@ -73,7 +80,16 @@ var lives = 3;
 var isStarted = false;
 // Estas son las barreras
 var barriers = [];
-var ufoCount = 0;
+// Booleano de si estamos en el final
+var isEnd = false;
+// Variable de numero de enemigos
+var numEnem =0;
+// Cogemos el record anterior
+var highScore = localStorage.getItem("HighScore");
+if (highScore === null){
+    highScore = 0;
+}
+
 
 // Funcion que crea todo
 function create() {
@@ -104,6 +120,7 @@ function create() {
     // Añadimos los textos
     scoreText = scene.add.text(16, 16, "Puntuación: " + score, { fontSize: '18px', fill: '#FFF' })
     livesText = scene.add.text(696, 16, "Vidas: " + lives, { fontSize: '18px', fill: '#FFF' })
+    highScoreText = scene.add.text(350, 16, "Record: " + highScore, { fontSize: '18px', fill: '#FFF' })
     startText = scene.add.text(400, 300, "Haz click con el ratón para jugar", { fontSize: '18px', fill: '#FFF' }).setOrigin(0.5)
 
     // Hacemos que al darle al espacio ejecute shoot
@@ -116,12 +133,14 @@ function create() {
 
     // Este código ejecuta el juego y quita el texto inicial
     this.input.on('pointerdown', function () {
-        if (isStarted == false) {
+        if (isStarted == false && isEnd == false) {
             isStarted = true;
             startText.destroy()
             setInterval(makeSaucer, 15000)
 
-        } else {
+        } else if (isEnd == true){
+            location.reload()
+        }else {
             shoot()
         }
     });
@@ -156,12 +175,12 @@ function shoot() {
     // Si seguimos jugando
     if (isStarted == true) {
         // Si no estamos disparando ya en este momento
-        if (isShooting === false) {
+        //if (isShooting === false) {
             // Añade la fisica de la bala y su sonido
             manageBullet(scene.physics.add.sprite(shooter.x, shooter.y, "bullet"))
             isShooting = true;
             shootSound.play()
-        }
+        //}
     }
 }
 
@@ -174,16 +193,17 @@ function initEnemys() {
             var enemyX = (c * (enemyInfo.width + enemyInfo.padding)) + enemyInfo.offset.left;
             var enemyY = (r * (enemyInfo.height + enemyInfo.padding)) + enemyInfo.offset.top;
             enimies.create(enemyX, enemyY, 'alien').setOrigin(0.5);
+            numEnem ++;
         }
     }
 }
 
-// Variables que nos harán falta para mover a los enemigos
-setInterval(moveEnimies, 1000)
+// Variables que nos harán falta para mover a los enemigos y el intervalo
+setInterval(moveEnimies, 800)
 
 // distancia x e y que se mueven
-var disX = 10;
-var disY = 5;
+var disX = 13;
+var disY = 8;
 
 // Aqui añadimos las veces que se han movido a la derecha o izquierda esta vez
 var xTimes = 0;
@@ -265,13 +285,15 @@ function manageBullet(bullet) {
                 // Destruimos al enemigo y subimos el marcador
                 enemy.destroy()
                 score++;
+                numEnem--;
                 scoreText.setText("Puntuación: " + score);
 
                 // Sonido de explosión
                 explosionSound.play()
 
+
                 // Condición de victoria
-                if ((score - ufoCount) === (enemyInfo.count.col * enemyInfo.count.row)) {
+                if (numEnem === 0) {
                     end("Victoria")
                 }
             }
@@ -287,20 +309,16 @@ function manageBullet(bullet) {
                 isShooting = false
 
                 scoreText.setText("Puntuación: " + score);
-
                 // Sonido explosión
                 explosionSound.play()
 
                 // Condición de victoria
-                if ((score - ufoCount) === (enemyInfo.count.col * enemyInfo.count.row)) {
-                    end("Victoria")
-                }
-
+                
 
             }
         }
 
-        // Si damos al alien que sale arriba moviendose
+        // Si damos al ovni que sale arriba moviendose
         for (var step = 0; step < saucers.length; step++) {
 
             // El saucer se mueve
@@ -311,22 +329,19 @@ function manageBullet(bullet) {
                 bullet.destroy();
                 clearInterval(i)
                 isShooting = false
-
+                score++;
                 scoreText.setText("Puntuación: " + score);
 
 
                 explosionSound.play()
 
-                if ((score - ufoCount) === (enemyInfo.count.col * enemyInfo.count.row)) {
-                    end("Victoria")
-                }
+                
 
                 // Subimos la cuenta y destruimos el ufo
                 saucer.destroy()
                 saucer.isDestroyed = true;
                 saucerSound.stop();
                 score++;
-                ufoCount++;
             }
         }
     }, 10)
@@ -342,16 +357,22 @@ function manageBullet(bullet) {
 // Velocidad de la bala enemiga
 var enemyBulletVelo = 200;
 
+
 // Función que maneja la bala enemiga
 function manageEnemyBullet(bullet, enemy) {
     
     // Le pasamos el angulo de disparo, calculado desde el marcianito al jugador
     var angle = Phaser.Math.Angle.BetweenPoints(enemy, shooter);
-
+    // Subimos la velocidad de la bala si hemos conseguido 30 puntos
+    if (score > 30){
+        enemyBulletVelo = 350;
+    } else if (score > 50){
+        enemyBulletVelo = 450;
+    }
     // Creamos la bala rotada
     scene.physics.velocityFromRotation(angle, enemyBulletVelo, bullet.body.velocity);
     // Subimos la velocidad
-    enemyBulletVelo = enemyBulletVelo + 2
+    
     var i = setInterval(function () {
 
         // si nos da
@@ -360,13 +381,21 @@ function manageEnemyBullet(bullet, enemy) {
             bullet.destroy();
             clearInterval(i);
             // Bajamos el número de vidas
-            lives--;
-            livesText.setText("Vidas: " + lives);
+            
+            
             explosionSound.play()
 
             // Si nos quedamos sin vidas, perdimos
-            if (lives == 0) {
+            if (lives == 1) {
+                // Bajamos el número de vidas
+                lives--;
+                livesText.setText("Vidas: " + lives);
+                // Pasamos a la función final
                 end("Game Over")
+            } else if (lives> 0){
+                // Bajamos el número de vidas
+                lives--;
+                livesText.setText("Vidas: " + lives);
             }
         }
         // si da contra una barrera
@@ -378,14 +407,13 @@ function manageEnemyBullet(bullet, enemy) {
                 isShooting = false
 
                 // Conseguimos más puntos
+                score++;
                 scoreText.setText("Puntuación: " + score);
 
 
                 explosionSound.play()
 
-                if (score === (enemyInfo.count.col * enemyInfo.count.row)) {
-                    end("Victoria")
-                }
+                
             }
         }
     }, 10)
@@ -405,7 +433,8 @@ function checkOverlap(spriteA, spriteB) {
 }
 
 // Intervalo de disparo de los enemigos
-setInterval(enemyFire, 3000)
+setInterval(enemyFire, 2500);
+
 
 function enemyFire() {
     if (isStarted === true) {
@@ -424,6 +453,7 @@ function makeSaucer() {
         manageSaucer(scene.physics.add.sprite(0, 60, "saucer"));
     }
 }
+
 
 // Crea el intervalo de disparo del ovni, comprobando donde está y qué ovni es
 setInterval(function () {
@@ -536,15 +566,16 @@ function end(con) {
 
     // Terminamos el movimiento
     move.stop()
-    var highScore = localStorage.getItem("HighScore");
-    if (highScore === null){
-        highScore = 0;
-    }
+    
     // Señalamos con la puntuación final
-    alert(`¡${con}! Su puntuación final es de: ` + score + `. La puntuación más alta era de ${highScore}`);
+    startText = scene.add.text(400, 300, `¡${con}! Su puntuación es de: ` + score + `. La puntuación más alta era de ${highScore}`, { fontSize: '18px', fill: '#FFF' }).setOrigin(0.5)
+    // Decimos que es el final
+    isEnd = true;
+    isStarted = false;
+    // Cambiamos el record
     if(score> highScore){
         localStorage.setItem("HighScore", score);
     }
-    location.reload()
+    
 
 }
