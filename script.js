@@ -199,7 +199,7 @@ function initEnemys() {
 }
 
 // Variables que nos harán falta para mover a los enemigos y el intervalo
-setInterval(moveEnimies, 800)
+setInterval(moveEnimies, 1000)
 
 // distancia x e y que se mueven
 var disX = 13;
