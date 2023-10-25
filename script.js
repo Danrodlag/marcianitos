@@ -148,7 +148,7 @@ function create() {
     initEnemys()
 }
 
-// Recarga la página
+// Recarga el movimiento de la pala
 function update() {
     // Solo lo hace cuando estamos jugando
     if (isStarted == true) {
